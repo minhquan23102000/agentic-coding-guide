@@ -117,10 +117,10 @@ Claude Code là một **CLI agent terminal-native** của Anthropic (preview 10/
 
 `oh-my-claudecode` là một **lớp điều phối đa-agent** (multi-agent orchestration) chồng lên Claude Code. Thay vì một agent, bạn chỉ huy một dàn agent chuyên biệt. Theo [docs OMC][omc-docs], OMC cung cấp:
 
-- **19 agent chuyên biệt** chia 3 lane (Build & Analysis, Review, Domain Specialists), mỗi agent gắn model phù hợp (Opus/Sonnet/Haiku).
-- **10 execution mode** — từ Autopilot (tự chủ toàn phần) tới Team (điều phối native) và Ralph (kiên trì).
-- **25+ MCP tool** — Language Server, AST grep, Python REPL, và model ngoài (Codex, Gemini).
-- **Native Teams** — pipeline phân tầng `plan → prd → exec → verify → fix`.
+- **19 agent chuyên biệt** trải nhiều lane (exploration, planning, execution, verification, review, testing, docs, data, vcs, cleanup...), mỗi agent gắn sẵn model tier hợp lý (Haiku/Sonnet/Opus) — bạn sẽ thấy chúng vào vai đúng lúc trong Phần 5.
+- **Nhiều execution mode** — từ Autopilot (tự chủ toàn phần) tới Team (điều phối native), Ralph (kiên trì), Ultrawork (song song), UltraQA (QA cycling).
+- **Bộ MCP tool** — Language Server (lsp_*), AST grep, Python REPL, state/notepad/project-memory, và model ngoài (Codex, Gemini).
+- **Native Teams** — pipeline phân tầng `team-plan → team-prd → team-exec → team-verify → team-fix`.
 
 Nguyên tắc vàng của OMC nhắc lại đúng triết lý Phần 2:
 
@@ -202,102 +202,113 @@ Tránh các metric dễ-hype: *số dòng sinh ra*, *tốc độ gõ*, *cảm gi
 
 ---
 
-## Phần 5 — Thực hành: dùng `oh-my-claudecode` hiệu quả
+## Phần 5 — Một phiên làm việc với `oh-my-claudecode`
 
-Phần này chuyển triết lý + thang level thành thao tác. Mọi lệnh dựa trên [docs OMC chính thức][omc-docs].
+Thay vì liệt kê tính năng, ta đi theo **một việc có thật từ đầu tới cuối**: bạn cần thêm *đăng nhập bằng Google (OAuth)* vào một REST API Node.js đang chạy. Đây là brownfield — code đã có, đụng vào là có rủi ro. Hãy xem một nhạc trưởng dẫn dàn agent qua việc này thế nào, và *gõ gì, gọi gì, dừng lại ở đâu*.
 
-### 5.1. Cài đặt nhanh
+> Cài một lần rồi quên: `/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode` → `/plugin install oh-my-claudecode` → `/omc-setup`. Nếu định dùng `team` hay model ngoài, cần **tmux** và `npm i -g @openai/codex @google/gemini-cli`; `/omc-doctor` sẽ báo còn thiếu gì. Từ đây trở đi bạn không gõ cú pháp — bạn **mô tả ý định**, hook của OMC bắt keyword và tự gọi skill đúng.
 
-```bash
-# Trong Claude Code:
-/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode
-/plugin install oh-my-claudecode
-/oh-my-claudecode:omc-setup        # wizard cấu hình
+### 5.1. Cảnh 1 — Ý tưởng còn mơ hồ, đừng code vội
 
-# Hoặc dùng CLI:
-npm install -g oh-my-claude-sisyphus
-omc                                 # tự mở Claude Code trong tmux
+Bạn mở phiên và gõ đúng cái mình đang nghĩ:
+
 ```
-> Cài đặt chi tiết theo từng OS: xem docs OMC. Tài liệu này chỉ cần bạn chạy được `omc`.
-
-### 5.2. "Magic keywords" — gõ ý định, OMC tự định tuyến
-
-OMC phát hiện ý định từ ngôn ngữ tự nhiên. Bạn không cần nhớ cú pháp; bạn mô tả việc:
-
-| Gõ thế này | OMC làm gì | Bậc autonomy |
-|------------|-----------|--------------|
-| `/deep-interview 'ý tưởng còn mơ hồ'` | Phỏng vấn Socratic làm rõ yêu cầu trước khi code | (chuẩn bị) |
-| `plan the auth system` | Mở phiên planning tương tác | L3 |
-| `autopilot build a React dashboard` | Tự chủ toàn phần: idea → code | L4 |
-| `ralph refactor the API` | Kiên trì tới khi verify sạch ("the boulder never stops") | L4 |
-| `ulw fix all typescript errors` | Ultrawork: nhiều agent song song | L4 |
-| `team 5:executor refactor backend` | Dàn 5 agent có lead điều phối | L4 |
-| `ask codex to review this` | Hỏi model ngoài (Codex/Gemini) | L3 |
-
-### 5.3. Bốn execution mode chính — khi nào dùng cái nào
-
-Đây là khác biệt thực hành quan trọng nhất. Map thẳng vào thang level Phần 4:
-
-**🤖 Autopilot** — tự chủ toàn phần, vòng lặp tự sửa.
+deep interview: thêm đăng nhập Google vào API
 ```
-autopilot build a login page with JWT auth
+
+Một câu mười từ. Nếu giao thẳng cho AI, nó sẽ *đoán* — đoán bạn muốn lưu session hay JWT, đoán có cần refresh token, đoán xử lý user trùng email ra sao. Mỗi cú đoán sai là một vòng rework. `deep-interview` chặn đúng chỗ đó: nó **không hỏi "bạn muốn gì"** mà hỏi **"bạn đang ngầm giả định gì"**.
+
+Đầu tiên nó chốt *hình dạng* việc (Round 0 — topology): "Tôi đọc ra 3 mảnh độc lập — luồng OAuth với Google, lưu/khớp user, và phát token cho client. Đúng chưa?". Rồi mỗi vòng nó nhắm vào mảnh *mờ nhất*, hỏi đúng một câu, và sau mỗi câu trả lời nó hiện một con số **ambiguity** tụt dần: `59% → 42% → 28% → 15%`. Khi xuống dưới ngưỡng (mặc định 20%), nó dừng hỏi và kết tinh một **spec** vào `.omc/specs/`. Bạn vừa biến mười từ thành một bản đặc tả có tiêu chí nghiệm thu đo được — *trước khi* tốn một dòng code nào. Đây chính là tinh thần METR ở Phần 4: spec tốt là cách chống-rework rẻ nhất.
+
+> Còn lửng lơ hơn nữa — một con bug mà bạn *chưa biết nguyên nhân*? Gọi `/deep-dive`: nó chạy mấy luồng truy vết song song để tìm gốc, rồi tự nạp phát hiện vào đúng phiên `deep-interview` này.
+
+### 5.2. Cảnh 2 — Từ spec thành kế hoạch bị thách thức
+
+Có spec rồi, bạn vẫn chưa code. Bạn đẩy nó qua một lớp guardrail nữa:
+
 ```
-- Pipeline: Expansion (Analyst+Architect) → Planning (Architect+Critic) → Execution (Ralph+Ultrawork) → QA (UltraQA).
-- **Dùng khi:** task rõ, có thể verify tự động, bạn muốn giao trọn. **Tránh khi:** vùng code nhạy cảm thiếu test.
-
-**🔄 Ralph** — kiên trì tới khi đạt.
+ralplan
 ```
-ralph refactor the API until all tests pass
+
+`ralplan` không phải để bạn ngồi viết plan. Nó triệu một hội đồng ba người tranh luận về *cách làm*: **Planner** dựng các bước, **Architect** soi ranh giới hệ thống và đánh đổi dài hạn, **Critic** đập lại — "nếu user đã có tài khoản local trùng email thì sao?", "OAuth callback đã chống CSRF chưa?". Vòng này lặp tối đa 5 lần, và đầu ra không phải một danh sách việc khơi khơi mà là một plan có **Decision Drivers** và **ít nhất 2 phương án** kèm lý do chọn (ADR) — ghi vào `.omc/plans/`.
+
+Điểm mấu chốt: **plan dừng ở trạng thái *pending approval*, không tự chạy tiếp.** OMC cố tình *không* có auto-handoff. Bạn — nhạc trưởng — đọc *kế hoạch*, không đọc từng dòng code, rồi mới quyết. Đây là cổng đồng thuận: bạn vừa đi qua *rõ ràng* (deep-interview) → *khả thi* (ralplan) → giờ là *cho phép thực thi*.
+
+> Nếu lúc nãy bạn nóng vội gõ thẳng `ralph thêm OAuth` với một prompt cụt lủn, `ralplan` vẫn âm thầm chặn lại: prompt quá ngắn và không có "neo" cụ thể (file, `#issue`, tên hàm, thông báo lỗi) sẽ bị ép qua đúng vòng consensus này. Muốn bỏ qua cố ý thì thêm tiền tố `force:`.
+
+### 5.3. Cảnh 3 — Giao cho dàn nhạc, rồi bước ra ngoài
+
+Plan đã duyệt. Giờ mới tới lúc code, và bạn chọn *hình dạng* thực thi theo *hình dạng* việc:
+
 ```
-- Vòng lặp vô hạn, tự bao gồm Ultrawork, yêu cầu verify mạnh: Architect xác nhận mới dừng.
-- **Dùng khi:** mục tiêu có tiêu chí "đạt" rõ ràng (test xanh, lint sạch).
-
-**⚡ Ultrawork (ulw)** — song song tối đa.
+autopilot   # (dùng plan vừa duyệt làm đầu vào)
 ```
-ulw fix these 5 bugs
+
+Vì đã có consensus plan, `autopilot` **bỏ qua hai phase đầu** (không cần tự mở rộng ý tưởng và tự lập kế hoạch nữa) và nhảy thẳng vào thực thi. Bên trong, nó không phải một AI khổng lồ làm tất — nó là một **dây chuyền các vai**:
+
+```mermaid
+graph LR
+  P["plan đã duyệt"] --> EX["Execution: Ralph + Ultrawork"]
+  EX --> QA["QA: UltraQA ≤5 vòng"]
+  QA --> V["Validation: Architect + Security + Code-reviewer"]
+  V -->|cả 3 duyệt| C["Cleanup: dọn slop"]
 ```
-- Tới 5+ agent nền chạy đồng thời, smart model routing, non-blocking.
-- **Dùng khi:** nhiều việc *độc lập* (lý tưởng cho fan-out).
 
-**👥 Team** — điều phối native nhiều agent.
+Trái tim của khâu Execution là **Ralph** — "hòn đá của Sisyphus". Ralph bẻ plan thành các *user story có tiêu chí nghiệm thu* (ghi vào `prd.json` trong `.omc/state/sessions/{id}/`), rồi **lặp không nghỉ**: làm → tự kiểm → story nào chưa `passes` thì làm lại, tới khi *mọi* story đạt **và** một reviewer (mặc định **Architect**) gật đầu. Những việc con độc lập trong mỗi vòng — sửa route, thêm middleware, viết test — Ralph quăng cho **Ultrawork** chạy *song song*, mỗi việc về đúng model tier của nó (việc tra cứu cho model nhanh, việc kiến trúc cho model mạnh). Build và test nặng chạy nền.
+
+Bạn không ngồi nhìn. Bạn đã bật thông báo lúc khởi động (`omc --telegram`, hoặc `--discord`/`--slack`), nên bạn đi pha cà phê. Điện thoại rung khi QA xong, hoặc khi có một câu *thật sự* cần bạn quyết. Đó là điều phối từ xa: agent làm, bạn chỉ vào cuộc ở khúc cua.
+
+> **Chọn mode theo hình dạng việc** — đây là phản xạ bạn cần, không phải bảng tra:
+> - Một việc rõ, gọn → cứ để `executor` làm.
+> - Nhiều việc *độc lập* (sửa 20 lỗi TypeScript rải rác) → `ulw` (Ultrawork) bắn song song.
+> - Cần *đảm bảo hoàn thành* và verify sạch, kể cả khi crash giữa chừng → `ralph` (có state, resume được).
+> - Spec lớn nhiều giai đoạn, muốn dàn quân → `team 5:executor ...` (pipeline phân tầng, có lead điều phối).
+> - Idea → code trọn gói, không muốn đụng tay → `autopilot`.
+
+### 5.4. Cảnh 4 — Khi hòn đá lăn ngược
+
+Không phải lúc nào cũng êm. Bạn ngó lại, thấy Ralph quay vòng — cùng một lỗi test OAuth callback hỏng *ba lần liên tiếp*. Đây là lúc cơ chế dừng-an-toàn lên tiếng: Ralph **không** lăn vô hạn một cách mù quáng; gặp cùng lỗi 3 vòng nó **escalate** thay vì cố mãi. (Tín hiệu `The boulder never stops` trong log chỉ nghĩa là vòng lặp *đang chạy bình thường* — đừng nhầm là treo.)
+
+Bạn vào xem chuyện gì:
+
 ```
-team 3:executor build the dashboard
+/trace            # xem timeline luồng agent — agent nào kẹt ở đâu
 ```
-- Pipeline phân tầng có cổng chất lượng: `team-plan → team-prd → team-exec → team-verify → team-fix`.
-- **Dùng khi:** spec lớn, cần phân rã + cổng kiểm soát.
 
-> **Quy tắc chọn mode theo bậc:** việc một-phát rõ ràng → **L3** (`plan` rồi để executor làm). Việc lặp + verify được → **Ralph/Autopilot (L4)**. Nhiều việc độc lập → **Ultrawork (L4)**. Spec lớn nhiều giai đoạn → **Team (L4)**. Yêu cầu còn mơ hồ → **`deep-interview` trước** (đừng để agent đoán).
+Hóa ra callback URL trong test trỏ sai môi trường. Bạn dừng sạch và sửa tay đúng một chỗ:
 
-### 5.4. Model routing — đừng đốt Opus cho việc của Haiku
+```
+/oh-my-claudecode:cancel --force    # reset session + state cũ
+```
 
-OMC định tuyến theo độ phức tạp; bạn nên hiểu để không lãng phí:
+Rồi giao lại. Vài mẹo gỡ khi kẹt thật sự: `not inside tmux` → mở `tmux new -s dev`; `codex: command not found` → cài CLI ngoài; hook cư xử lạ → `DISABLE_OMC=1` để loại trừ, hoặc tắt chọn lọc bằng `OMC_SKIP_HOOKS=<tên>`.
 
-| Độ phức tạp | Model | Dùng cho |
-|-------------|-------|----------|
-| Simple | **Haiku** | tra cứu, đếm, format, doc đơn giản |
-| Standard | **Sonnet** | implement, test, refactor |
-| Complex | **Opus** | kiến trúc, debug sâu, planning |
+### 5.5. Cảnh 5 — Nghiệm thu: người viết không tự chấm
 
-19 agent (explore=Haiku, executor=Sonnet, architect/planner/critic=Opus, ...) đã gắn sẵn tier hợp lý.
+Ralph báo mọi story đã pass và Architect đã duyệt. Nhưng autopilot chưa cho qua: nó bước vào **Validation**, nơi **ba người khác** phải đồng ý — Architect (kiến trúc), **Security-reviewer** (đây là code auth, nên soi CSRF/secret/token rò rỉ), và **Code-reviewer** (chất lượng tổng thể). Đây là *Golden Rule* đóng thành quy trình: **người viết code không được tự duyệt code mình vừa viết**. Cùng một ngữ cảnh vừa sinh vừa khen sẽ mù trước lỗi của chính nó.
 
-### 5.5. Quy trình "nhạc trưởng" mẫu (gắn guardrail)
+Cuối cùng là khâu Cleanup: một lượt `ai-slop-cleaner` *bắt buộc* quét bỏ phần phình do AI sinh ra (import thừa, abstraction vô dụng, comment lảm nhảm) — rồi *chạy lại test* để chắc dọn dẹp không làm hỏng gì. Bạn muốn tự tay rà thì gọi reviewer-only:
 
-Một vòng làm việc L3–L4 lành mạnh, tôn trọng bằng chứng Phần 4:
+```
+/oh-my-claudecode:ai-slop-cleaner src/auth/oauth.ts --review   # chỉ báo cáo, không sửa
+/oh-my-claudecode:verify                                        # đòi bằng chứng "thực sự chạy"
+```
 
-1. **Làm rõ trước khi code:** yêu cầu mơ hồ → `/deep-interview`. (Spec tốt là chống-rework rẻ nhất — đúng tinh thần METR.)
-2. **Plan:** `plan ...` để Architect dựng kế hoạch; bạn review *kế hoạch*, không review từng dòng.
-3. **Phân vai & thực thi:** `autopilot` / `team` / `ulw` tùy hình dạng việc.
-4. **Tách viết và kiểm:** để `verifier` / `code-reviewer` chạy *pass riêng* — không tự duyệt code mình vừa sinh trong cùng ngữ cảnh (Golden Rule).
-5. **Đo, đừng cảm tính:** theo dõi churn / CFR / lead time (5.x ↔ 4.4), không đếm dòng.
-6. **Chỉ leo bậc khi guardrail đủ:** thêm test + review gate trước khi nâng từ L3 lên L4.
+Bạn không nghiệm thu bằng cảm tính. Bạn nhìn bằng chứng — test pass, và nếu theo dõi nghiêm thì cả *churn / change-failure-rate / lead time* (§4.4). Tính năng OAuth lên PR; bạn merge.
 
-### 5.6. Bộ nhớ & trạng thái (vì sao agent "nhớ" giữa các phiên)
+### 5.6. Vì sao lần sau nó không hỏi lại — bộ nhớ của dàn nhạc
 
-- `.omc/notepad.md` — bộ nhớ sống sót qua context pruning (Priority / Working 7 ngày / Manual).
-- `.omc/project-memory.json` — tech stack, quy ước, chỉ thị kiến trúc.
-- `.omc/plans/`, `.omc/state/` — kế hoạch và trạng thái mode.
+Tuần sau bạn quay lại thêm "đăng nhập GitHub". Agent *không* hỏi lại tech stack, quy ước đặt tên, hay rằng dự án dùng JWT — vì những thứ đó đã nằm trong bộ nhớ bền: quyết định dài hạn ở `.omc/project-memory.json`, ghi chú cao-signal ở `.omc/notepad.md` (tag `<remember>` sống 7 ngày, `<remember priority>` là vĩnh viễn), plan/spec cũ ở `.omc/plans/` và `.omc/specs/`. Bạn cũng đã `wiki this` lại bài học OAuth callback, nên nó thành tri thức tra cứu được cho mọi phiên sau. Dàn nhạc nhớ bản tổng phổ; bạn không phải dạy lại từ đầu.
 
-Dùng chúng để agent không hỏi lại điều bạn đã chốt — một dạng guardrail chống "agent quên context rồi tự bịa".
+> Khi gặp một cách giải hay và muốn tái dùng, `/oh-my-claudecode:skillify` đóng nó thành một skill riêng. Cần xử lý nhiều issue cùng lúc thì `omc teleport #123` (qua `project-session-manager`) tách mỗi việc ra một worktree + tmux để chạy song song, mỗi cái một PR.
+
+### 5.7. Rút gọn cả phiên thành một phản xạ
+
+Bóc hết tên lệnh đi, cái còn lại là một vòng lặp của nhạc trưởng — và đó mới là thứ đáng nhớ:
+
+> **Làm rõ** (`deep-interview`) → **lập kế hoạch & bị thách thức** (`ralplan`, dừng ở *pending approval*) → **bạn duyệt** → **giao đúng hình dạng** (`autopilot`/`ralph`/`ulw`/`team`) → **người khác kiểm, không phải người viết** (Validation + `verify`) → **đo bằng metric thật, không đếm dòng**.
+
+Mỗi mũi tên là một cổng. Bạn chỉ leo từ L3 lên L4 (Phần 4) khi cổng kiểm — test, review tách lớp — đã đủ chắc để đỡ. `oh-my-claudecode` không khiến bạn tự chủ nhiều hơn; nó khiến việc *đặt đúng bậc tự chủ cho từng việc* trở nên dễ làm.
 
 ---
 
