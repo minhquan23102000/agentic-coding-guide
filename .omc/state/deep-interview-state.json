@@ -1,0 +1,20 @@
+{
+  "active": false,
+  "current_phase": "complete",
+  "state": {
+    "interview_id": "di-20260630-guide-agentic-code",
+    "type": "greenfield",
+    "status": "COMPLETE",
+    "final_ambiguity": 0.145,
+    "threshold": 0.2,
+    "threshold_source": "default",
+    "spec_path": ".omc/specs/deep-interview-guide-agentic-code.md",
+    "research_notes": ".omc/research/agentic-coding/notes.md",
+    "deliverable": "docs/guide-agentic-code.md",
+    "execution_mode": "single-author-write (approved Round 5 bridge)",
+    "rounds_total": 5,
+    "challenge_modes_used": ["contrarian"],
+    "acceptance_criteria_passed": 8,
+    "acceptance_criteria_total": 8
+  }
+}
