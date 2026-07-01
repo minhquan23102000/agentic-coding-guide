@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agentic Coding: Từ Vibe đến Điều phối hiệu quả</title>
+<style>
+  :root {
+    /* control-room surfaces — two dark depths, never a light/paper slide */
+    --bg:      oklch(24% 0.035 250);   /* panel navy — "light" slide */
+    --bg-deep: oklch(13% 0.022 250);   /* deep graphite — "dark" slide */
+    --surface: oklch(28% 0.032 250);
+    --fg:      oklch(94% 0.01 95);
+    --muted:   oklch(70% 0.02 250);
+    --border:  oklch(40% 0.03 250);
+
+    --accent:       oklch(72% 0.11 185);  /* teal — triết lý / conductor */
+    --accent-tool:  oklch(66% 0.13 290);  /* indigo — công cụ / OMC */
+    --accent-warn:  oklch(75% 0.15 70);   /* amber — bằng chứng ngược hype */
+    --accent-bad:   oklch(62% 0.19 25);   /* đỏ cam — rủi ro / bảo mật */
+    --accent-good:  oklch(78% 0.13 145);  /* xanh lá — tích cực có kiểm soát */
+
+    --accent-soft: color-mix(in oklch, var(--accent) 16%, transparent);
+
+    --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+    --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg-deep);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+  body::-webkit-scrollbar { display: none; }
+  p { text-wrap: pretty; }
+  h1, h2, h3 { text-wrap: balance; }
+
+  /* ─── slide surface — unified dark control-room, two depths ────────── */
+  .slide {
+    flex: 0 0 100vw;
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    padding: clamp(40px, 6vw, 84px) clamp(44px, 7vw, 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+  }
+  .slide.light { background-color: var(--bg); }
+  .slide.dark  { background-color: var(--bg-deep); }
+  .slide.hero { padding-block: clamp(56px, 8vw, 112px); }
+  .slide.center { align-items: center; text-align: center; justify-content: center; }
+  .slide.center .body { margin-inline: auto; }
+
+  /* HUD corner brackets on hero slides — the one decisive flourish */
+  .slide.hero::before, .slide.hero::after {
+    content: '';
+    position: absolute;
+    width: 28px; height: 28px;
+    border: 1.5px solid color-mix(in oklch, var(--accent) 55%, transparent);
+    opacity: 0.6;
+  }
+  .slide.hero::before { top: 28px; left: 28px; border-right: none; border-bottom: none; }
+  .slide.hero::after  { bottom: 28px; right: 28px; border-left: none; border-top: none; }
+
+  /* ─── eyebrow / kicker — terminal prompt style ──────────────────────── */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eyebrow::before { content: '›'; opacity: 0.7; }
+  .eyebrow.tool  { color: var(--accent-tool); }
+  .eyebrow.warn  { color: var(--accent-warn); }
+  .eyebrow.good  { color: var(--accent-good); }
+
+  .badge {
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bg-deep);
+    background: var(--accent);
+    padding: 5px 12px;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+
+  /* ─── type ──────────────────────────────────────────────────────────── */
+  .h-hero { font-family: var(--font-display); font-size: clamp(46px, 6.6vw, 92px); line-height: 1.04; letter-spacing: -0.02em; margin: 0 0 18px; max-width: 20ch; }
+  .h-xl   { font-family: var(--font-display); font-size: clamp(32px, 4vw, 52px); line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 16px; max-width: 24ch; }
+  .h-md   { font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 32px); line-height: 1.22; letter-spacing: -0.01em; margin: 0 0 14px; }
+  .lead   { font-size: clamp(17px, 1.4vw, 21px); line-height: 1.55; color: var(--muted); max-width: 62ch; margin: 0; }
+  .meta   { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .small-note { font-size: 13px; color: var(--muted); max-width: 60ch; margin: 10px 0 0; }
+  .closing-line { font-size: clamp(15px, 1.3vw, 18px); color: var(--muted); margin: 18px 0 0; max-width: 52ch; }
+
+  /* ─── source footer (citation convention) ──────────────────────────── */
+  .src {
+    position: absolute;
+    left: clamp(24px, 4vw, 40px);
+    bottom: 60px; /* clears the fixed deck-hint/deck-counter chrome band (bottom 22–50px) */
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    opacity: 0.75;
+    max-width: 70ch;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── agenda grid ───────────────────────────────────────────────────── */
+  .agenda { display: grid; grid-template-columns: 1.4fr 1.4fr 1.4fr 1.4fr 2.8fr; gap: 14px; margin-top: 32px; align-items: stretch; }
+  .agenda-item { border: 1px solid var(--border); border-radius: 4px; padding: 16px 14px; background: var(--surface); }
+  .agenda-item .nb { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .agenda-item h3 { font-size: 14.5px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
+  .agenda-item.focus { border: 1.5px solid var(--accent-tool); background: color-mix(in oklch, var(--accent-tool) 10%, var(--surface)); display: flex; flex-direction: column; justify-content: center; }
+  .agenda-item.focus .nb { color: var(--accent-tool); }
+  .agenda-item.focus h3 { font-size: 18px; }
+  .agenda-item.focus p { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+
+  /* ─── timeline rail ─────────────────────────────────────────────────── */
+  .rail { position: relative; margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .rail-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .rail-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-bottom: 10px; }
+  .rail-item.peak .rail-dot { width: 14px; height: 14px; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .rail-item .date { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+  .rail-item.peak .date { color: var(--accent); }
+  .rail-item p { font-size: 13px; margin: 4px 0 0; line-height: 1.35; max-width: 15ch; }
+
+  /* ─── pipeline / diagram lane ────────────────────────────────────────── */
+  .lane { display: flex; align-items: center; gap: 0; margin-top: 36px; }
+  .lane-node { flex: 1 1 140px; min-width: 0; border: 1px solid var(--border); background: var(--surface); border-radius: 4px; padding: 14px 16px; text-align: center; }
+  .lane-node p { margin: 0; font-size: 13.5px; line-height: 1.3; }
+  .lane-node .nb { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent-tool); display: block; margin-bottom: 6px; }
+  .lane-arrow { flex: 0 0 auto; padding: 0 10px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 15px; }
+  .lane-node.gate { border-color: var(--accent-tool); }
+
+  /* pipeline (numbered steps, Ralph/Ultrawork/etc — larger step cards) */
+  .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 32px; }
+  .step { border-top: 2px solid var(--accent-tool); padding-top: 12px; }
+  .step .nb { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent-tool); letter-spacing: 0.05em; }
+  .step h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 5px 0 5px; line-height: 1.2; }
+  .step p { color: var(--muted); margin: 0; font-size: 12.5px; line-height: 1.4; }
+
+  /* ─── tables ─────────────────────────────────────────────────────────── */
+  table.dtable { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 13.5px; }
+  table.dtable th, table.dtable td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.35; }
+  table.dtable th { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+  table.dtable td strong { color: var(--fg); }
+  table.dtable tr.hl td { background: color-mix(in oklch, var(--accent-tool) 8%, transparent); }
+  table.dtable td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  table.dtable.dense { font-size: 12px; }
+  table.dtable.dense th, table.dtable.dense td { padding: 6px 10px; }
+
+  /* ─── stat grid ──────────────────────────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 28px; }
+  .stat-cell { border: 1px solid var(--border); border-radius: 4px; padding: 16px 14px; background: var(--surface); }
+  .stat-cell .src-tag { font-family: var(--font-mono); font-size: 10px; color: var(--accent-warn); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-cell .fig { font-family: var(--font-mono); font-size: clamp(22px, 2.4vw, 30px); color: var(--accent-warn); font-weight: 600; margin: 8px 0 6px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat-cell p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.4; }
+
+  /* ─── big-stat single number ─────────────────────────────────────────── */
+  .stat-num { font-family: var(--font-mono); font-size: clamp(120px, 18vw, 220px); line-height: 0.9; letter-spacing: -0.02em; color: var(--accent-warn); font-weight: 600; margin: 0 0 16px; font-variant-numeric: tabular-nums; }
+  .stat-num .unit { font-size: 0.4em; opacity: 0.85; margin-left: 4px; }
+  .stat-caption { font-size: clamp(18px, 1.5vw, 22px); color: var(--muted); max-width: 30ch; margin: 0 auto; }
+
+  /* ─── quote ──────────────────────────────────────────────────────────── */
+  .quote-mark { font-family: var(--font-display); font-size: clamp(100px, 13vw, 160px); line-height: 0.6; color: var(--accent); opacity: 0.22; margin: 0 0 -20px; }
+  .quote-text { font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 38px); line-height: 1.32; letter-spacing: -0.005em; max-width: 30ch; margin: 0 auto 22px; }
+  .quote-author { font-size: 13px; color: var(--muted); }
+
+  /* ─── autonomy dial (6-tick arc gauge) ──────────────────────────────── */
+  .dial-wrap { display: flex; align-items: center; gap: 20px; }
+  .dial-ticks { display: flex; gap: 6px; }
+  .dial-tick { width: 30px; height: 6px; border-radius: 2px; background: var(--border); }
+  .dial-tick.on { background: var(--accent-tool); }
+  .dial-label { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em; }
+
+  /* ─── narrative scene (Phần 5 cảnh) ─────────────────────────────────── */
+  .scene-cmd { font-family: var(--font-mono); font-size: 14px; background: var(--bg-deep); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; color: var(--accent-good); margin: 20px 0; display: inline-block; }
+  .slide.dark .scene-cmd { background: color-mix(in oklch, black 30%, var(--bg-deep)); }
+  .scene-cmd::before { content: '$ '; color: var(--muted); }
+  ul.scene-list { margin: 16px 0 0; padding: 0; list-style: none; max-width: 68ch; }
+  ul.scene-list li { font-size: 14.5px; line-height: 1.5; margin-bottom: 9px; padding-left: 18px; position: relative; color: var(--fg); }
+  ul.scene-list li::before { content: '—'; position: absolute; left: 0; color: var(--accent-tool); }
+  .callout { border: 1px solid var(--accent-tool); border-radius: 4px; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: var(--muted); max-width: 68ch; }
+  .callout.strong { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 8%, transparent); color: var(--fg); font-size: 14px; }
+  .ambig-trail { display: flex; gap: 20px; margin-top: 22px; align-items: baseline; }
+  .ambig-trail .v { font-family: var(--font-mono); font-size: clamp(20px, 2vw, 26px); color: var(--accent-tool); font-variant-numeric: tabular-nums; }
+  .ambig-trail .v.last { color: var(--accent-good); }
+  .ambig-trail .arrow { color: var(--muted); }
+
+  /* ─── two-column body (references, bullets) ─────────────────────────── */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 40px; margin-top: 20px; }
+  .cols2 .blk h4 { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-good); margin: 0 0 8px; }
+  .cols2 .blk ul { margin: 0; padding: 0; list-style: none; }
+  .cols2 .blk li { font-size: 13.5px; line-height: 1.5; margin-bottom: 7px; }
+  .ref-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; margin-top: 20px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); line-height: 1.6; }
+
+  /* ─── decision table row highlight ──────────────────────────────────── */
+  .cmdtag { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent-good); }
+
+  /* ─── conductor motif (silhouette, restrained) ───────────────────────── */
+  .motif-conductor { position: absolute; right: clamp(24px, 5vw, 64px); bottom: clamp(56px, 7vw, 96px); opacity: 0.5; }
+  .motif-conductor svg { width: 92px; height: 116px; }
+
+  /* ─── chrome (counter, hint, progress) — fixed, never scrolls ─────── */
+  .deck-counter { position: fixed; bottom: 22px; right: 28px; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg); background: var(--surface); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); letter-spacing: 0.04em; z-index: 10; font-variant-numeric: tabular-nums; }
+  .deck-hint { position: fixed; bottom: 22px; left: 28px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em; z-index: 10; }
+  .deck-progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0; z-index: 10; transition: width 0.18s ease; }
+
+  /* ─── reduced motion ─────────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    html, body { scroll-behavior: auto; }
+    .deck-progress { transition: none; }
+  }
+
+  /* ─── narrow-viewport safety net — this deck is fixed-height (100vh) per
+     slide with overflow:hidden, so at laptop widths below 900px we thin
+     dense grids down instead of silently clipping content ────────────── */
+  @media (max-width: 900px) {
+    .slide { overflow-y: auto; }
+    .agenda { grid-template-columns: repeat(2, 1fr); }
+    .agenda-item.focus { grid-column: 1 / -1; }
+    .stat-grid, .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .cols2, .ref-cols { grid-template-columns: 1fr; }
+    .rail-row { grid-template-columns: repeat(3, 1fr); row-gap: 20px; }
+    .lane { flex-wrap: wrap; row-gap: 12px; }
+    table.dtable, table.dtable.dense { font-size: 11.5px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- S00 — Cover -->
+<section class="slide hero light center" data-screen-label="01 Cover">
+  <div class="eyebrow">Buổi trình bày · 25–30 phút</div>
+  <h1 class="h-hero">Agentic Coding: Từ Vibe đến Điều phối hiệu quả</h1>
+  <p class="lead">Cách dùng AI coding agent có hiệu quả và năng suất đo được — không phải hype.</p>
+  <p class="small-note">Dành cho dev đã dùng Claude Code / Cursor — trọng tâm buổi này là dùng <span class="cmdtag">oh-my-claudecode</span> thực chiến.</p>
+  <div class="motif-conductor" aria-hidden="true">
+    <svg viewBox="0 0 92 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="46" cy="20" r="12" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 32 L46 78" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 44 L20 30 M46 44 L72 30" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 78 L28 112 M46 78 L64 112" stroke="var(--accent)" stroke-width="1.5"/>
+    </svg>
+  </div>
+</section>
+
+<!-- S01 — Agenda -->
+<section class="slide light" data-screen-label="02 Agenda">
+  <p class="eyebrow">Lộ trình</p>
+  <h2 class="h-xl">Nền tảng gọn → thực hành sâu với <span class="cmdtag">oh-my-claudecode</span></h2>
+  <div class="agenda">
+    <div class="agenda-item"><span class="nb">01 · gọn</span><h3>Bối cảnh — vibe coding → agentic coding</h3></div>
+    <div class="agenda-item"><span class="nb">02 · gọn</span><h3>Triết lý — công cụ chỉ là phương tiện</h3></div>
+    <div class="agenda-item"><span class="nb">03 · gọn</span><h3>Công cụ — Claude Code + OMC là gì</h3></div>
+    <div class="agenda-item"><span class="nb">04 · gọn</span><h3>Hệ thống level — thang tự chủ, chống hype</h3></div>
+    <div class="agenda-item focus"><span class="nb">05 · trọng tâm</span><h3>Thực hành với oh-my-claudecode</h3><p>Một phiên làm việc thật, từng lệnh, từng quyết định — kèm cheat-sheet mang về.</p></div>
+  </div>
+</section>
+
+<!-- S02 — Timeline -->
+<section class="slide dark" data-screen-label="03 Timeline">
+  <p class="eyebrow">Phần 1 · Bối cảnh</p>
+  <h2 class="h-xl">5 năm tiến hóa: autocomplete → chat → agent tự chủ</h2>
+  <div class="rail">
+    <div class="rail-row">
+      <div class="rail-item"><div class="rail-dot"></div><div class="date">06/2021</div><p>Copilot preview → kỷ nguyên autocomplete</p></div>
+      <div class="rail-item"><div class="rail-dot"></div><div class="date">11/2022</div><p>ChatGPT → code-qua-hội-thoại phổ cập</p></div>
+      <div class="rail-item"><div class="rail-dot"></div><div class="date">03/2024</div><p>Devin 1.0 tự nhận "AI Software Engineer đầu tiên"</p></div>
+      <div class="rail-item"><div class="rail-dot"></div><div class="date">10/2024</div><p>Claude Code preview → agent terminal-native</p></div>
+      <div class="rail-item peak"><div class="rail-dot"></div><div class="date">02/02/2025</div><p>Karpathy đặt tên "vibe coding"</p></div>
+      <div class="rail-item"><div class="rail-dot"></div><div class="date">2026</div><p>Karpathy đề xuất "agentic engineering"</p></div>
+    </div>
+  </div>
+  <p class="quote-author" style="margin-top:28px; font-size:14px; color:var(--muted); max-width:56ch;">"...fully give in to the vibes... forget that the code even exists." — Karpathy, 02/02/2025</p>
+  <p class="small-note">Karpathy tự ghi rõ: dành cho <strong style="color:var(--fg)">dự án cuối tuần/hobby</strong> — không phải quy trình production. Collins Dictionary chọn "vibe coding" = Word of the Year 2025.</p>
+  <p class="src">Nguồn: GitHub Copilot (Wikipedia) · Anthropic model timeline · Karpathy tweet gốc · Collins Dictionary</p>
+</section>
+
+<!-- S03 — Landscape diagram + quote -->
+<section class="slide light" data-screen-label="04 Landscape">
+  <p class="eyebrow">Phần 1 · Bối cảnh</p>
+  <h2 class="h-xl">Agentic coding = giữ ủy thác của vibe coding, gắn lại kỷ luật kỹ thuật</h2>
+  <p class="lead" style="font-style:italic;">"2024 = inline autocomplete. 2026 = autonomous execution — describe a task, agent executes across multiple files... until the task is complete." — Anthropic 2026 Agentic Coding Trends</p>
+  <div class="lane">
+    <div class="lane-node"><span class="nb">01</span><p>Autocomplete<br>Copilot</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><span class="nb">02</span><p>IDE-embedded agent<br>Cursor, Cline</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><span class="nb">03</span><p>CLI agent<br>Claude Code, Aider</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node gate"><span class="nb">04</span><p>Autonomous agent<br>Devin</p></div>
+  </div>
+  <p class="closing-line">code suggestion → steerable draft → intent delegation</p>
+  <p class="small-note">Vị trí một công cụ trên trục này là <strong style="color:var(--fg)">lựa chọn triết học</strong>, không phải thước đo "xịn hơn".</p>
+  <p class="src">Nguồn: Anthropic 2026 Agentic Coding Trends Report · Swarmia (Five Levels of AI Agent Autonomy)</p>
+</section>
+
+<!-- S04 — Conductor quote -->
+<section class="slide hero dark center" data-screen-label="05 Conductor">
+  <div class="eyebrow" style="justify-content:center;">Phần 2 · Triết lý</div>
+  <h2 class="h-hero">Bạn là nhạc trưởng, không phải nhạc công</h2>
+  <p class="quote-text" style="font-size:clamp(18px,1.6vw,22px); opacity:0.85; max-width:44ch;">"You are the conductor, not the performer." — triết lý cốt lõi của oh-my-claudecode</p>
+  <div class="cols2" style="max-width:70ch; text-align:left; margin-top:28px;">
+    <div class="blk"><ul class="scene-list">
+      <li>Nhạc trưởng không chơi từng nốt — họ định hướng, phân vai, kiểm tra</li>
+    </ul></div>
+    <div class="blk"><ul class="scene-list">
+      <li>Tự sửa từng dòng → chậm chính mình; buông hoàn toàn → mất kiểm soát chất lượng</li>
+    </ul></div>
+  </div>
+  <p class="closing-line" style="margin-inline:auto;">Hiệu quả nằm ở khoảng giữa — Phần 4 cho thước đo để biết bạn đang ở đâu.</p>
+</section>
+
+<!-- S05 — Comparison table -->
+<section class="slide light" data-screen-label="06 Comparison">
+  <p class="eyebrow">Phần 2 · Triết lý</p>
+  <h2 class="h-xl">4 tool, 4 triết lý — trục control ↔ autonomy là lựa chọn có chủ đích</h2>
+  <table class="dtable">
+    <thead><tr><th>Công cụ</th><th>Triết lý cốt lõi</th><th>Hệ quả thiết kế</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Claude Code</strong></td><td>"Do the simple thing first" — vòng lặp đơn luồng, chủ đích tránh multi-agent swarm</td><td>Debuggability & minh bạch; dev định nghĩa goal, review kết quả</td></tr>
+      <tr><td><strong>Aider</strong></td><td>Git là source of truth & cơ chế an toàn</td><td>Mỗi edit = 1 atomic commit; tách Architect/Editor</td></tr>
+      <tr><td><strong>Cline</strong></td><td>"Inference không nên là business model" → approval-first</td><td>Người duyệt từng action</td></tr>
+      <tr><td><strong>Devin</strong> (Cognition)</td><td>Autonomous software engineer</td><td>End-to-end, ít can thiệp</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">Không có công cụ "đúng" tuyệt đối — thư viện chưa có test thì approval-first an toàn hơn full-autopilot, bất kể model mạnh tới đâu. <strong style="color:var(--accent-warn)">Bẫy đặt tên:</strong> Codeium (→Windsurf→Devin Desktop) ≠ CodiumAI (→Qodo) — hai công ty khác nhau.</div>
+  <p class="src">Nguồn: ZenML/Anthropic · Aider docs · Cline blog · Devin</p>
+</section>
+
+<!-- S06 — Claude Code → OMC -->
+<section class="slide dark" data-screen-label="07 Foundation">
+  <p class="eyebrow tool">Phần 3 · Công cụ</p>
+  <h2 class="h-xl">Nền: Claude Code<span style="color:var(--muted); font-size:0.62em; letter-spacing:0;"> — Lớp điều phối: oh-my-claudecode — Điểm khác: oh-my-pi</span></h2>
+  <div class="cols2" style="grid-template-columns:1fr 1.3fr;">
+    <div class="blk">
+      <h4>Claude Code (nền)</h4>
+      <p class="lead" style="font-size:14px;">CLI agent terminal-native (preview 10/2024); "do the simple thing first" — vòng lặp đơn luồng đọc→sửa→chạy→tự kiểm, bạn duyệt kết quả. Mạnh, minh bạch — nhưng trần năng suất nằm ở chỗ là <strong style="color:var(--fg)">một</strong> agent.</p>
+      <h4 style="margin-top:18px;">oh-my-pi (điểm khác)</h4>
+      <p class="lead" style="font-size:14px;">Harness khác, cùng triết lý delegation-first, nhấn vào bộ tool tích hợp + song song hóa (AST/LSP/eval/browser/IRC). OMC dễ tiếp cận hơn cho người mới.</p>
+    </div>
+    <div class="blk">
+      <h4>oh-my-claudecode — lớp điều phối đa-agent (chồng lên, không thay thế)</h4>
+      <ul class="scene-list">
+        <li><strong style="color:var(--fg)">19 agent chuyên biệt</strong> theo lane (exploration/planning/execution/verification/review/testing…), gắn model tier hợp lý (Haiku/Sonnet/Opus)</li>
+        <li><strong style="color:var(--fg)">Execution modes:</strong> Autopilot, Team, Ralph, Ultrawork, UltraQA</li>
+        <li><strong style="color:var(--fg)">MCP tools:</strong> LSP, AST grep, Python REPL, state/notepad/project-memory, model ngoài (Codex, Gemini)</li>
+      </ul>
+      <div class="callout strong">Golden Rule: "NEVER make code changes directly. ALWAYS delegate to specialized agents." — vai trò bạn là guide/review/orchestrate</div>
+    </div>
+  </div>
+  <p class="src">Nguồn: oh-my-claudecode docs (#execution-modes) · anthropic.com/product/claude-code</p>
+</section>
+
+<!-- S07 — L0-L5 table -->
+<section class="slide hero light" data-screen-label="08 Levels">
+  <p class="eyebrow tool">Phần 4 · Hệ thống level</p>
+  <h2 class="h-xl">Thang 6 bậc tự chủ<span style="color:var(--muted); font-size:0.62em; letter-spacing:0;"> — grounded trên Swarmia + CSA + Knight + SAE J3016 analogy</span></h2>
+  <p class="small-note">Tương tự SAE J3016 (6 cấp tự lái xe); hợp nhất từ 4 khung độc lập (Swarmia coding-specific, CSA human-control, Knight vai trò người dùng, ELEKS maturity) — đồng thuận: 5–6 bậc, <strong style="color:var(--fg)">cao hơn KHÔNG đồng nghĩa tốt hơn</strong>.</p>
+  <table class="dtable dense">
+    <thead><tr><th>Bậc</th><th>Agent làm gì</th><th>Vai trò bạn</th><th>Công cụ tiêu biểu</th><th>Metric phải canh</th></tr></thead>
+    <tbody>
+      <tr><td><strong>L0 Manual</strong></td><td>Không AI</td><td>Author</td><td>—</td><td>(baseline)</td></tr>
+      <tr><td><strong>L1 Assistive</strong></td><td>Autocomplete từng dòng</td><td>Operator</td><td>Copilot inline</td><td>Code churn</td></tr>
+      <tr><td><strong>L2 Conversational</strong></td><td>Chat, sửa đa file, bạn duyệt từng bước</td><td>Collaborator</td><td>Claude Code cơ bản, Cursor chat</td><td>Review từng diff</td></tr>
+      <tr class="hl"><td><strong>L3 Delegation (Conductor)</strong></td><td>Nhận task → tự plan → sửa nhiều file → mở PR; bạn duyệt kết quả</td><td>Approver</td><td>Claude Code agentic + OMC cơ bản</td><td>Change Failure Rate, defect escape</td></tr>
+      <tr class="hl"><td><strong>L4 Orchestration</strong></td><td>Nhiều agent song song + quality gate</td><td>Designer/Approver</td><td>OMC Autopilot/Team/Ralph, oh-my-pi</td><td>Churn, stability, lead time</td></tr>
+      <tr><td><strong>L5 Autonomous</strong></td><td>Tự chọn task, self-improving</td><td>Observer</td><td>Frontier (Devin) — rủi ro</td><td>"not enterprise-ready"</td></tr>
+    </tbody>
+  </table>
+  <p class="src">Nguồn: Swarmia · CSA (cloudsecurityalliance.org) · Knight (arXiv 2506.12469) · ELEKS</p>
+</section>
+
+<!-- S08 — Guardrail -->
+<section class="slide light" data-screen-label="09 Guardrail">
+  <p class="eyebrow tool">Phần 4 · Hệ thống level</p>
+  <h2 class="h-xl">Cao hơn không tốt hơn — guardrail mới là điều kiện lên bậc</h2>
+  <ul class="scene-list" style="max-width:74ch;">
+    <li>Chỉ nên leo từ L<sub>n</sub> lên L<sub>n+1</sub> khi đã có: <strong style="color:var(--fg)">(1)</strong> test tự động bao quanh vùng agent đụng tới, <strong style="color:var(--fg)">(2)</strong> quy trình review, <strong style="color:var(--fg)">(3)</strong> spec/acceptance rõ</li>
+    <li>Thiếu guardrail → bậc cao hơn chỉ <strong style="color:var(--accent-warn)">phóng đại rủi ro</strong> (bằng chứng ở slide sau)</li>
+    <li>L4 orchestration rực rỡ cho việc <em>song song, lặp lại, có test bao quanh</em>; L2 supervised đúng cho code <em>nhạy cảm, ít test, một-lần</em></li>
+  </ul>
+  <div class="dial-wrap" style="margin-top:32px;">
+    <div class="dial-ticks">
+      <div class="dial-tick on"></div><div class="dial-tick on"></div><div class="dial-tick on"></div><div class="dial-tick"></div><div class="dial-tick"></div><div class="dial-tick"></div>
+    </div>
+    <div class="dial-label">L0 — L1 — L2 · guardrail đủ → mở khóa L3+</div>
+  </div>
+</section>
+
+<!-- S09 — Stat grid evidence -->
+<section class="slide dark" data-screen-label="10 Evidence">
+  <p class="eyebrow warn">Phần 4 · Hệ thống level</p>
+  <h2 class="h-xl">Tự chủ cao hơn KHÔNG tự động cho năng suất cao hơn</h2>
+  <div class="stat-grid">
+    <div class="stat-cell"><span class="src-tag">METR RCT 2025</span><div class="fig">−19%</div><p>16 dev giỏi, 246 task: dùng AI chậm hơn (CI [+2%,+39%]); tự nghĩ nhanh hơn 24% → gap nhận thức ~43 điểm %</p></div>
+    <div class="stat-cell"><span class="src-tag">DORA 2025</span><div class="fig">24%</div><p>~5.000 người — AI là chất khuếch đại: throughput↑ nhưng stability↓ nếu thiếu test tự động; chỉ 24% "tin tưởng nhiều"</p></div>
+    <div class="stat-cell"><span class="src-tag">GitClear</span><div class="fig">5.7%</div><p>211M dòng — churn 3.1%→5.7%, copy-paste 8.3%→12.3%, refactor 25%→&lt;10% (lần đầu copy-paste vượt refactored)</p></div>
+    <div class="stat-cell"><span class="src-tag">Bảo mật</span><div class="fig">2.7×</div><p>vulnerability density code AI cao hơn ~2.7×; 30–62% chứa lỗ hổng</p></div>
+    <div class="stat-cell"><span class="src-tag">Stack Overflow</span><div class="fig">29%</div><p>2025 — adoption 76%→84% nhưng trust 40%→29%; 66% tốn thêm thời gian debug code AI</p></div>
+  </div>
+  <p class="src" style="position:static; margin-top:20px;">Nguồn: metr.org / arXiv 2507.09089 · dora.dev · gitclear.com · arXiv 2404.18353, veracode.com · survey.stackoverflow.co/2025/ai</p>
+</section>
+
+<!-- S10 — Positive + metrics + conclusion -->
+<section class="slide light" data-screen-label="11 Metrics">
+  <p class="eyebrow good">Phần 4 · Hệ thống level</p>
+  <h2 class="h-xl">AI hiệu quả khi đúng chỗ — đo bằng metric hệ thống, không phải cảm giác nhanh</h2>
+  <div class="cols2">
+    <div class="blk">
+      <h4 style="color:var(--accent-good);">Mặt tích cực</h4>
+      <ul class="scene-list">
+        <li>Copilot lab: nhanh hơn <strong style="color:var(--fg)">55.8%</strong> trên task đơn giản — giảm còn <strong style="color:var(--fg)">~42%</strong> ở real-world (Peng 2023)</li>
+        <li>Junior <strong style="color:var(--fg)">+21–52%</strong>, senior <strong style="color:var(--fg)">+7–16%</strong>; task càng phức tạp lợi ích càng tiệm cận &lt;10% (McKinsey)</li>
+      </ul>
+    </div>
+    <div class="blk">
+      <h4>Metric đáng tin (DORA/SPACE)</h4>
+      <ul class="scene-list">
+        <li>Code churn rate</li><li>Change Failure Rate</li><li>Lead time for changes</li><li>Defect escape rate</li><li>Security vuln density</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout strong" style="margin-top:20px; max-width:78ch;">Mỗi bậc autonomy là một công cụ. Leo lên L4/L5 mà thiếu guardrail = đúng công thức tạo churn và lỗ hổng mà nghiên cứu trên đo được.</div>
+  <p class="src">Nguồn: arXiv 2302.06590 (Peng 2023) · McKinsey</p>
+</section>
+
+<!-- S11 — Divider Phần 5 -->
+<section class="slide hero dark center" data-screen-label="12 Divider">
+  <div class="badge">Trọng tâm buổi trình bày</div>
+  <h2 class="h-hero" style="max-width:26ch;">Một phiên làm việc thật: thêm đăng nhập Google (OAuth) vào REST API Node.js</h2>
+  <p class="lead" style="margin-inline:auto;">Bối cảnh: <strong style="color:var(--fg)">Brownfield</strong> — code đã có, đụng vào là có rủi ro.</p>
+  <p class="scene-cmd" style="margin-inline:auto; font-size:12px;">plugin marketplace add … → plugin install oh-my-claudecode → /omc-setup</p>
+  <p class="closing-line" style="margin-inline:auto;">Từ đây bạn không gõ cú pháp — bạn mô tả ý định, hook OMC bắt keyword và tự gọi skill đúng.</p>
+</section>
+
+<!-- S12 — Scene 1: deep-interview -->
+<section class="slide light" data-screen-label="13 Scene1">
+  <p class="eyebrow good">Phần 5 · Cảnh 1</p>
+  <h2 class="h-xl">deep-interview: hỏi "bạn đang ngầm giả định gì", không hỏi "bạn muốn gì"</h2>
+  <div class="scene-cmd">deep interview: thêm đăng nhập Google vào API</div>
+  <ul class="scene-list">
+    <li>Một câu 10 từ — giao thẳng cho AI, nó sẽ đoán: session hay JWT? refresh token? user trùng email? Mỗi cú đoán sai = 1 vòng rework</li>
+    <li>Chốt <strong style="color:var(--fg)">hình dạng việc</strong> trước (Round 0): "3 mảnh độc lập — luồng OAuth, lưu/khớp user, phát token. Đúng chưa?"</li>
+    <li>Mỗi vòng sau nhắm mảnh mờ nhất, hỏi đúng 1 câu — ambiguity giảm dần, dưới ngưỡng (mặc định 20%) → kết tinh spec vào <span class="cmdtag">.omc/specs/</span></li>
+  </ul>
+  <div class="ambig-trail">
+    <span class="v">59%</span><span class="arrow">→</span><span class="v">42%</span><span class="arrow">→</span><span class="v">28%</span><span class="arrow">→</span><span class="v last">15%</span>
+  </div>
+  <div class="callout">Bug chưa rõ nguyên nhân → <span class="cmdtag">/deep-dive</span> (truy vết song song, tự nạp phát hiện vào phiên deep-interview).</div>
+</section>
+
+<!-- S13 — Scene 2: ralplan -->
+<section class="slide dark" data-screen-label="14 Scene2">
+  <p class="eyebrow good">Phần 5 · Cảnh 2</p>
+  <h2 class="h-xl">ralplan: một hội đồng 3 người tranh luận cách làm</h2>
+  <div class="scene-cmd">ralplan</div>
+  <ul class="scene-list">
+    <li><strong style="color:var(--fg)">Planner</strong> dựng bước → <strong style="color:var(--fg)">Architect</strong> soi ranh giới hệ thống, đánh đổi dài hạn → <strong style="color:var(--fg)">Critic</strong> đập lại ("user đã có tài khoản local trùng email thì sao?", "OAuth callback đã chống CSRF chưa?")</li>
+    <li>Lặp tối đa 5 lần; đầu ra: plan có Decision Drivers + ≥2 phương án (ADR) → <span class="cmdtag">.omc/plans/</span></li>
+  </ul>
+  <div class="callout strong">Plan dừng ở <strong>pending approval</strong> — KHÔNG tự chạy tiếp. Bạn đọc kế hoạch, không đọc từng dòng code, rồi mới quyết.</div>
+  <p class="closing-line">Cổng đồng thuận: rõ ràng (deep-interview) → khả thi (ralplan) → cho phép thực thi (bạn)</p>
+  <div class="callout">Gõ thẳng "ralph thêm OAuth" cụt lủn → ralplan vẫn chặn (thiếu "neo" cụ thể), ép qua vòng consensus. Bỏ qua cố ý → tiền tố <span class="cmdtag">force:</span></div>
+</section>
+
+<!-- S14 — Scene 3: autopilot pipeline -->
+<section class="slide light" data-screen-label="15 Scene3">
+  <p class="eyebrow good">Phần 5 · Cảnh 3</p>
+  <h2 class="h-xl">autopilot: dây chuyền các vai, không phải 1 AI khổng lồ làm tất</h2>
+  <div class="scene-cmd">autopilot &nbsp;# dùng plan vừa duyệt làm đầu vào</div>
+  <div class="lane" style="margin-top:24px;">
+    <div class="lane-node gate"><span class="nb">plan</span><p>đã duyệt</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><span class="nb">exec</span><p>Ralph + Ultrawork</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><span class="nb">qa</span><p>UltraQA ≤5 vòng</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node gate"><span class="nb">validation</span><p>Architect + Security + Code-reviewer</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><span class="nb">cleanup</span><p>dọn slop</p></div>
+  </div>
+  <p class="small-note" style="margin-top:20px;"><strong style="color:var(--fg)">Ralph</strong> ("hòn đá của Sisyphus") bẻ plan thành user story có tiêu chí nghiệm thu, lặp không nghỉ tới khi mọi story đạt và reviewer gật đầu. Việc con độc lập → <strong style="color:var(--fg)">Ultrawork</strong> chạy song song, mỗi việc về đúng model tier.</p>
+  <p class="closing-line">Bạn bật thông báo (telegram/discord/slack) rồi đi pha cà phê — điện thoại rung khi QA xong hoặc có câu thật sự cần bạn quyết.</p>
+</section>
+
+<!-- S15 — Decision table -->
+<section class="slide dark" data-screen-label="16 Decision">
+  <p class="eyebrow tool">Phần 5</p>
+  <h2 class="h-xl">Chọn mode theo hình dạng việc — phản xạ, không phải bảng tra</h2>
+  <table class="dtable">
+    <thead><tr><th>Hình dạng việc</th><th>Mode</th></tr></thead>
+    <tbody>
+      <tr><td>Một việc rõ, gọn</td><td><span class="cmdtag">executor</span></td></tr>
+      <tr><td>Nhiều việc độc lập (VD: sửa 20 lỗi TypeScript rải rác)</td><td><span class="cmdtag">ulw</span> (Ultrawork) — bắn song song</td></tr>
+      <tr class="hl"><td>Cần đảm bảo hoàn thành + verify sạch, kể cả crash giữa chừng</td><td><span class="cmdtag">ralph</span> (có state, resume được)</td></tr>
+      <tr><td>Spec lớn nhiều giai đoạn, muốn dàn quân</td><td><span class="cmdtag">team 5:executor ...</span></td></tr>
+      <tr class="hl"><td>Idea → code trọn gói, không muốn đụng tay</td><td><span class="cmdtag">autopilot</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- S16 — Scene 4: safe-stop -->
+<section class="slide light" data-screen-label="17 Scene4">
+  <p class="eyebrow warn">Phần 5 · Cảnh 4</p>
+  <h2 class="h-xl">Cơ chế dừng-an-toàn khi có sự cố</h2>
+  <p class="lead">Tình huống: Ralph quay vòng — cùng lỗi test OAuth callback hỏng 3 lần liên tiếp.</p>
+  <ul class="scene-list">
+    <li>Ralph <strong style="color:var(--fg)">không</strong> lăn vô hạn mù quáng — gặp cùng lỗi 3 vòng → escalate thay vì cố mãi</li>
+    <li>Tín hiệu "The boulder never stops" trong log = vòng lặp <strong style="color:var(--fg)">đang chạy bình thường</strong>, không phải bị treo</li>
+  </ul>
+  <div class="scene-cmd" style="display:block; width:fit-content;">/trace &nbsp;&nbsp;&nbsp;&nbsp;# xem timeline luồng agent — kẹt ở đâu</div>
+  <div class="scene-cmd" style="display:block; width:fit-content;">/oh-my-claudecode:cancel --force &nbsp;&nbsp;# reset session + state cũ</div>
+  <p class="small-note">Mẹo gỡ kẹt nhanh: "not inside tmux" → tmux new -s dev · "codex: command not found" → cài CLI ngoài · hook lạ → DISABLE_OMC=1 hoặc OMC_SKIP_HOOKS=&lt;tên&gt;</p>
+</section>
+
+<!-- S17 — Scene 5: validation -->
+<section class="slide dark" data-screen-label="18 Scene5">
+  <p class="eyebrow tool">Phần 5 · Cảnh 5</p>
+  <h2 class="h-xl">Validation: 3 người khác phải đồng ý, không phải người viết</h2>
+  <ul class="scene-list" style="max-width:76ch;">
+    <li>Ralph báo mọi story <span class="cmdtag">passes</span>, Architect đã duyệt trong Execution — nhưng autopilot chưa cho qua</li>
+    <li>3 reviewer bắt buộc: <strong style="color:var(--fg)">Architect</strong> (kiến trúc) · <strong style="color:var(--fg)">Security-reviewer</strong> (CSRF/secret/token rò rỉ) · <strong style="color:var(--fg)">Code-reviewer</strong> (chất lượng tổng thể)</li>
+    <li>Golden Rule đóng thành quy trình: người viết code không được tự duyệt</li>
+    <li>Cleanup bắt buộc: <span class="cmdtag">ai-slop-cleaner</span> quét bỏ phần phình → chạy lại test</li>
+  </ul>
+  <p class="dial-label" style="margin-top:16px; letter-spacing:0.02em;">✓ Architect &nbsp; ✓ Security-reviewer &nbsp; ✓ Code-reviewer → merge</p>
+  <p class="closing-line">Nghiệm thu bằng bằng chứng (test pass, churn/CFR/lead time) — không bằng cảm tính. OAuth lên PR; merge.</p>
+</section>
+
+<!-- S18 — Scene 6: memory -->
+<section class="slide light" data-screen-label="19 Scene6">
+  <p class="eyebrow good">Phần 5 · Cảnh 6</p>
+  <h2 class="h-xl">Vì sao lần sau nó không hỏi lại</h2>
+  <p class="lead">Tuần sau, thêm "đăng nhập GitHub". Agent không hỏi lại tech stack, quy ước đặt tên, hay việc dự án dùng JWT.</p>
+  <ul class="scene-list">
+    <li>Quyết định dài hạn → <span class="cmdtag">.omc/project-memory.json</span></li>
+    <li>Ghi chú cao-signal → <span class="cmdtag">.omc/notepad.md</span> (&lt;remember&gt; = 7 ngày, &lt;remember priority&gt; = vĩnh viễn)</li>
+    <li>Plan/spec cũ → <span class="cmdtag">.omc/plans/</span>, <span class="cmdtag">.omc/specs/</span></li>
+    <li>Bài học OAuth callback → đã "wiki this" → tri thức tra cứu được cho mọi phiên sau</li>
+  </ul>
+  <p class="closing-line">"Dàn nhạc nhớ bản tổng phổ; bạn không phải dạy lại từ đầu."</p>
+</section>
+
+<!-- S19 — Reflex flow -->
+<section class="slide hero light center" data-screen-label="20 Reflex">
+  <p class="eyebrow" style="justify-content:center;">Phần 5</p>
+  <h2 class="h-xl" style="max-width:34ch;">Bóc hết tên lệnh — cái còn lại là một vòng lặp của nhạc trưởng</h2>
+  <div class="lane" style="max-width:96ch; margin-inline:auto;">
+    <div class="lane-node"><p>Làm rõ<br><span class="cmdtag">deep-interview</span></p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><p>Kế hoạch bị thách thức<br><span class="cmdtag">ralplan</span></p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node gate"><p>Bạn duyệt</p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><p>Giao đúng hình dạng<br><span class="cmdtag">autopilot/ralph/ulw</span></p></div>
+    <div class="lane-arrow">→</div>
+    <div class="lane-node"><p>Người khác kiểm<br>Validation + verify</p></div>
+  </div>
+  <p class="closing-line" style="margin-inline:auto;">Mỗi mũi tên là một cổng. Bạn chỉ leo từ L3 lên L4 khi cổng kiểm đã đủ chắc để đỡ.</p>
+</section>
+
+<!-- S20 — Cheat sheet -->
+<section class="slide dark" data-screen-label="21 CheatSheet">
+  <p class="eyebrow good">Phần 5 · Cheat-sheet</p>
+  <h2 class="h-md">Cheat-sheet lệnh oh-my-claudecode — chụp lại slide này</h2>
+  <table class="dtable dense">
+    <thead><tr><th>Khi nào dùng</th><th>Lệnh</th></tr></thead>
+    <tbody>
+      <tr><td>Ý tưởng mơ hồ, cần làm rõ trước khi code</td><td class="num"><span class="cmdtag">deep interview: &lt;mô tả ngắn&gt;</span></td></tr>
+      <tr><td>Bug chưa rõ nguyên nhân</td><td class="num"><span class="cmdtag">/deep-dive</span></td></tr>
+      <tr><td>Có spec, cần plan bị thách thức trước khi chạy</td><td class="num"><span class="cmdtag">ralplan</span></td></tr>
+      <tr><td>Idea → code trọn gói, không muốn đụng tay</td><td class="num"><span class="cmdtag">autopilot</span></td></tr>
+      <tr><td>Cần đảm bảo hoàn thành, resume được nếu crash</td><td class="num"><span class="cmdtag">ralph</span></td></tr>
+      <tr><td>Nhiều việc độc lập, chạy song song</td><td class="num"><span class="cmdtag">ulw</span> (Ultrawork)</td></tr>
+      <tr><td>Spec lớn, muốn dàn quân theo pipeline</td><td class="num"><span class="cmdtag">team 5:executor ...</span></td></tr>
+      <tr><td>Xem agent nào kẹt ở đâu</td><td class="num"><span class="cmdtag">/trace</span></td></tr>
+      <tr><td>Reset session/state khi kẹt thật sự</td><td class="num"><span class="cmdtag">/oh-my-claudecode:cancel --force</span></td></tr>
+      <tr><td>Tự rà code AI trước khi merge (chỉ báo cáo)</td><td class="num"><span class="cmdtag">/oh-my-claudecode:ai-slop-cleaner &lt;path&gt; --review</span></td></tr>
+      <tr><td>Đòi bằng chứng "thực sự chạy" trước khi nghiệm thu</td><td class="num"><span class="cmdtag">/oh-my-claudecode:verify</span></td></tr>
+      <tr><td>Đóng 1 giải pháp hay thành skill tái dùng</td><td class="num"><span class="cmdtag">/oh-my-claudecode:skillify</span></td></tr>
+      <tr><td>Xử lý nhiều issue song song, mỗi cái 1 worktree + PR</td><td class="num"><span class="cmdtag">omc teleport #&lt;issue&gt;</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- S21 — Closing statement -->
+<section class="slide hero dark center" data-screen-label="22 Closing">
+  <h2 class="h-hero" style="max-width:24ch;">Agentic coding không phải cuộc đua "ai để AI tự chủ nhiều hơn"</h2>
+  <p class="lead" style="margin-inline:auto; max-width:52ch;">Nó là kỹ năng đặt agent vào đúng bậc tự chủ cho từng việc, quây đủ guardrail, và đo bằng metric thật.</p>
+  <p class="closing-line" style="margin-inline:auto;">Công cụ chỉ là phương tiện — bằng chứng, không phải hype, mới là la bàn.</p>
+</section>
+
+<!-- S22 — References -->
+<section class="slide light" data-screen-label="23 References">
+  <p class="eyebrow">Nguồn tham khảo</p>
+  <h2 class="h-md">Nguồn tham khảo</h2>
+  <div class="ref-cols">
+    <div>GitHub Copilot history — en.wikipedia.org/wiki/GitHub_Copilot</div>
+    <div>McKinsey developer productivity — mckinsey.com</div>
+    <div>Anthropic Claude model timeline — hidekazu-konishi.com</div>
+    <div>GitHub Copilot productivity (Peng 2023) — arXiv 2302.06590</div>
+    <div>Devin (Cognition Labs) — thinkml.ai</div>
+    <div>Stack Overflow Developer Survey 2025 — survey.stackoverflow.co</div>
+    <div>Karpathy "vibe coding" tweet — x.com/karpathy/status/1886192184808149383</div>
+    <div>AI code security — arXiv 2404.18353 · veracode.com</div>
+    <div>Collins Dictionary Word of the Year 2025 — blog.collinsdictionary.com</div>
+    <div>GitClear AI code quality 2025 — gitclear.com</div>
+    <div>Anthropic 2026 Agentic Coding Trends — resources.anthropic.com</div>
+    <div>DORA 2025 Report — dora.dev</div>
+    <div>Five Levels of AI Agent Autonomy — Swarmia — swarmia.com</div>
+    <div>METR RCT 2025 — metr.org · arXiv 2507.09089</div>
+    <div>Agentic coding tools (enterprise) — prommer.net</div>
+    <div>ELEKS AI-SDLC Maturity Model — eleks.com</div>
+    <div>Claude Code agent architecture — zenml.io · anthropic.com/product/claude-code</div>
+    <div>Knight First Amendment — arXiv 2506.12469</div>
+    <div>Aider Architect/Editor — aider.chat</div>
+    <div>CSA Levels of Autonomy (2026) — cloudsecurityalliance.org</div>
+    <div>Cline Series A — cline.bot</div>
+    <div>oh-my-claudecode docs — oh-my-claudecode.dev/docs/#execution-modes</div>
+    <div>OpenHands (CodeAct) — arXiv 2407.16741</div>
+    <div>Devin Desktop — devin.ai/desktop</div>
+    <div>Cursor 3 agent-first — InfoQ infoq.com</div>
+  </div>
+</section>
+
+<!-- S23 — Q&A -->
+<section class="slide hero light center" data-screen-label="24 QA">
+  <div class="eyebrow" style="justify-content:center;">Q&amp;A</div>
+  <h2 class="h-hero">Câu hỏi &amp; thảo luận</h2>
+  <div class="cols2" style="max-width:64ch; text-align:left; margin-top:8px;">
+    <div class="blk"><ul class="scene-list"><li>Bạn đang ở bậc nào trong thang 6 bậc — và guardrail nào đang thiếu?</li></ul></div>
+    <div class="blk"><ul class="scene-list"><li>Việc nào trong team bạn nên thử theo lộ trình ở Phần 5 (deep-interview → ralplan → autopilot)?</li></ul></div>
+  </div>
+  <div class="motif-conductor" style="position:static; margin-top:36px; opacity:0.6;" aria-hidden="true">
+    <svg viewBox="0 0 92 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="46" cy="20" r="12" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 32 L46 78" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 44 L20 30 M46 44 L72 30" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M46 78 L28 112 M46 78 L64 112" stroke="var(--accent)" stroke-width="1.5"/>
+    </svg>
+  </div>
+</section>
+
+<!-- chrome -->
+<div class="deck-progress" id="deck-progress" aria-hidden></div>
+<div class="deck-counter"  id="deck-counter">1 / 24</div>
+<div class="deck-hint">← / → · scroll · swipe</div>
+
+<script>
+  (function () {
+    var slides   = document.querySelectorAll('.slide');
+    var counter  = document.getElementById('deck-counter');
+    var progress = document.getElementById('deck-progress');
+    var KEY      = 'od-deck-pos';
+    var active   = 0;
+
+    function scrollContainers() {
+      return [document.scrollingElement, document.documentElement, document.body]
+        .filter(Boolean)
+        .filter(function (el, idx, arr) { return arr.indexOf(el) === idx; });
+    }
+    function overflowX(el) {
+      if (!el) return 0;
+      return Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+    }
+    function scrollLeftOf(el) {
+      if (!el) return 0;
+      try { return Number(el.scrollLeft) || 0; } catch (_) { return 0; }
+    }
+    function activeScrollLeft() {
+      var candidates = scrollContainers();
+      var best = 0;
+      for (var i = 0; i < candidates.length; i++) {
+        var left = scrollLeftOf(candidates[i]);
+        if (Math.abs(left) > Math.abs(best)) best = left;
+      }
+      return best;
+    }
+    function scroller() {
+      var candidates = scrollContainers();
+      var best = candidates[0] || document.documentElement;
+      var bestScore = -1;
+      for (var i = 0; i < candidates.length; i++) {
+        var el = candidates[i];
+        var score = overflowX(el) + Math.abs(scrollLeftOf(el)) * 2;
+        if (score > bestScore) {
+          best = el;
+          bestScore = score;
+        }
+      }
+      return best;
+    }
+    function scrollToLeft(left, behavior) {
+      var candidates = scrollContainers();
+      for (var i = 0; i < candidates.length; i++) {
+        try { candidates[i].scrollLeft = left; } catch (_) {}
+        try { candidates[i].scrollTo({ left: left, behavior: behavior || 'smooth' }); } catch (_) {}
+      }
+    }
+    function setActive(i) {
+      active = i;
+      if (counter)  counter.textContent  = (i + 1) + ' / ' + slides.length;
+      if (progress) progress.style.width = (((i + 1) / slides.length) * 100) + '%';
+      try { localStorage.setItem(KEY, String(i)); } catch (_) {}
+    }
+    function go(i) {
+      var next = Math.max(0, Math.min(slides.length - 1, i));
+      setActive(next);
+      scrollToLeft(next * window.innerWidth, 'smooth');
+    }
+    function syncFromScroll() {
+      var i = Math.round(activeScrollLeft() / window.innerWidth);
+      if (i !== active && i >= 0 && i < slides.length) setActive(i);
+    }
+    function onKey(e) {
+      if (e.defaultPrevented) return;
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if      (e.key === 'ArrowRight' || e.key === ' '       || e.key === 'PageDown') { e.preventDefault(); go(active + 1); }
+      else if (e.key === 'ArrowLeft'  || e.key === 'PageUp')                            { e.preventDefault(); go(active - 1); }
+      else if (e.key === 'Home')                                                        { e.preventDefault(); go(0); }
+      else if (e.key === 'End')                                                         { e.preventDefault(); go(slides.length - 1); }
+    }
+
+    window.addEventListener('keydown', onKey, true);
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('scroll', syncFromScroll, { passive: true, capture: true });
+    window.addEventListener('scroll', syncFromScroll,   { passive: true });
+
+    document.body.setAttribute('tabindex', '-1');
+    document.body.style.outline = 'none';
+    function focusDeck() { try { window.focus(); document.body.focus({ preventScroll: true }); } catch (_) {} }
+    document.addEventListener('mousedown', focusDeck);
+    window.addEventListener('load', focusDeck);
+    focusDeck();
+
+    try {
+      var saved = parseInt(localStorage.getItem(KEY) || '0', 10);
+      if (!isNaN(saved) && saved >= 0 && saved < slides.length) {
+        setActive(saved);
+        scrollToLeft(saved * window.innerWidth, 'instant');
+      } else {
+        setActive(0);
+      }
+    } catch (_) { setActive(0); }
+  })();
+</script>
+</body>
+</html>
